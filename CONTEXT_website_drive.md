@@ -2,6 +2,12 @@
 
 _Laatst bijgewerkt: 2026-06-12_
 
+> **🚚 Nieuw hier (overdracht naar ander Claude-account / andere computer)?**
+> Alles wat nodig is staat op GitHub — er is NIETS nodig van de oude computer.
+> Start een Claude-sessie met:
+> _"Lees CONTEXT_website_drive.md op github.com/KobusvanderZwaal/Website_Drive en ga verder"_
+> en zie de sectie **🚚 Overdracht** onderaan dit document.
+
 ## 🎯 Doel van het project
 
 Een website voor de coverband **Drive**. De site toont onder andere de
@@ -142,3 +148,47 @@ git push
 > bot-wijzigingen. Haal eerst de laatste versie op:
 > `git -C "$env:TEMP\Website_Drive_clone" pull` en kopieer `index.html`
 > terug naar `drive-band.html`.
+
+## 🚚 Overdracht naar een ander Claude-account / andere computer
+
+**Het project hangt NIET aan een Claude-account.** Alle accounts die ertoe
+doen zijn onafhankelijk van Claude:
+
+| Onderdeel | Account | Overzetten nodig? |
+|-----------|---------|-------------------|
+| Code + website + dit document | GitHub (`KobusvanderZwaal`) | Nee — blijft gewoon staan |
+| Bot-hosting + alle secrets | Railway (login via GitHub) | Nee |
+| Telegram-bot | @BotFather (Telegram-account) | Nee |
+| Claude (chat/Code) | willekeurig — leest alles van GitHub | Gewoon nieuwe sessie starten |
+| Anthropic API-key (voor de bot) | console.anthropic.com — **los account**, mag privé zijn | Alleen key aanmaken + in Railway zetten |
+
+### Verse start op een nieuwe computer / nieuw Claude-account
+
+1. Start een Claude-sessie met:
+   _"Lees CONTEXT_website_drive.md op github.com/KobusvanderZwaal/Website_Drive en ga verder"_
+2. Claude kan de werkkopieën opnieuw opzetten (vereist: git geïnstalleerd):
+   ```powershell
+   git clone https://github.com/KobusvanderZwaal/Website_Drive.git "$env:TEMP\Website_Drive_clone"
+   git clone https://github.com/KobusvanderZwaal/Website_Drive_bot.git "$env:TEMP\Drive_bot"
+   ```
+   `drive-band.html` (de lokale bron) = `index.html` uit de website-repo.
+3. Voor pushen naar GitHub: zorg dat git is ingelogd op het GitHub-account
+   `KobusvanderZwaal` (of gebruik de PAT als wachtwoord).
+
+### Secrets — waar ze staan en hoe je ze terugkrijgt
+
+Secrets staan bewust nergens in de repo's. Ze staan op één plek: **Railway →
+service → Variables**. Daar zijn ze ook gewoon uit te lezen.
+Kwijt? Alles is opnieuw aan te maken:
+
+- **Telegram-token**: @BotFather → `/mybots` → API Token (of `/revoke` voor nieuwe)
+- **GitHub PAT**: github.com/settings/tokens → Generate new token (classic),
+  scope `repo`
+- **Anthropic API-key**: console.anthropic.com → API Keys → Create Key
+
+### Lokale werkmap verplaatsen (optioneel)
+
+De huidige werkmap staat op de zakelijke OneDrive
+(`C:\Users\k.vd.zwaal\OneDrive - Oosterhoff Group\Projecten\AI\Website Drive\`).
+Wil je het project volledig privé: kopieer die map (of clone gewoon opnieuw
+van GitHub — daar staat alles al) naar een privélocatie en werk vanaf daar.
