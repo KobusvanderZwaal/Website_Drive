@@ -1,194 +1,120 @@
-# CONTEXT — Website Drive (coverband)
+# CONTEXT: Drive Band Website Bot
 
-_Laatst bijgewerkt: 2026-06-12_
+_Bijgewerkt: 25 juni 2026_
 
-> **🚚 Nieuw hier (overdracht naar ander Claude-account / andere computer)?**
-> Alles wat nodig is staat op GitHub — er is NIETS nodig van de oude computer.
-> Start een Claude-sessie met:
-> _"Lees CONTEXT_website_drive.md op github.com/KobusvanderZwaal/Website_Drive en ga verder"_
-> en zie de sectie **🚚 Overdracht** onderaan dit document.
+## Project overzicht
 
-## 🎯 Doel van het project
+Coverband **Drive** heeft een statische website op GitHub Pages. Een Telegram-bot (@website_drive_bot) stelt bandleden in staat om via chat de website direct aan te passen — zowel de setlist als vrije HTML-wijzigingen. Claude (claude-opus-4-8) doet de feitelijke HTML-bewerkingen.
 
-Een website voor de coverband **Drive**. De site toont onder andere de
-band-introductie en de **setlist** (repertoire), gegroepeerd per decennium.
+---
 
-Daarnaast draait er een **Telegram-bot** zodat alle vier de bandleden zelf
-wijzigingen kunnen doorvoeren via een chat — zonder code of GitHub-kennis:
+## Repositories
 
-- **Setlist**: via `/toevoegen` en `/verwijderen` — gaat **direct** live.
-- **Rest van de website** (teksten, koppen, foto's): bandleden sturen gewoon
-  een berichtje of foto in vrije taal. De bot verzamelt deze in een wachtrij
-  en voert ze **elke avond om 22:00** in één keer door met behulp van Claude
-  (AI), waarna een samenvatting naar de bandgroepschat gaat.
+| Repo | URL | Doel |
+|------|-----|------|
+| Website | https://github.com/KobusvanderZwaal/Website_Drive | `index.html` op GitHub Pages (branch: main) |
+| Bot | https://github.com/KobusvanderZwaal/Website_Drive_bot | `main.py`, `Procfile`, `requirements.txt`, `.python-version` |
 
-## 🌐 Live & repositories
+### Context-bestand
+Dit bestand (`CONTEXT_website_drive.md`) staat in de **Website**-repo.
 
-| Wat | Waar |
-|-----|------|
-| Live website | https://kobusvanderZwaal.github.io/Website_Drive/ |
-| Website-repo | https://github.com/KobusvanderZwaal/Website_Drive (branch `main`) |
-| Bot-repo | https://github.com/KobusvanderZwaal/Website_Drive_bot (branch `main`) |
-| Hosting site | GitHub Pages (automatisch vanaf `main`) |
-| Hosting bot | Railway.app ✅ (live, met `.python-version` → Python 3.12) |
+---
 
-## 📁 Bestandsstructuur
+## Railway — werkend project
 
-### Lokale werkmap
-`C:\Users\k.vd.zwaal\OneDrive - Oosterhoff Group\Projecten\AI\Website Drive\`
+| Gegeven | Waarde |
+|---------|--------|
+| Projectnaam | **Website-Drive-bot** (hernoemd van "awake-radiance" op 25 jun 2026) |
+| Project-ID | `b650e6fd-7573-4ab5-a843-a6329a5f8090` |
+| Service | `worker` |
+| Service-ID | `0b41a6b7-e9c5-4048-b393-ab74416242d6` |
+| Environment-ID | `64b3339b-ee03-4846-8d76-65100af9acef` |
+| Region | US West |
+| Runtime | python@3.12.13 |
+| Start | `Procfile`: `worker: python main.py` |
 
-```
-drive-band.html              # Bronbestand van de site (~1.1 MB). Wordt op
-                             #   GitHub als index.html gepubliceerd.
-CONTEXT_website_drive.md     # Dit document.
-```
-
-### Tijdelijke git-clone (blijft tussen sessies bestaan)
-`%TEMP%\Website_Drive_clone\`  → bevat `index.html` (kopie van drive-band.html)
-en wordt gebruikt om naar GitHub te committen/pushen.
-
-### Bot-code
-`%TEMP%\Drive_bot\` (lokaal) → gepusht naar repo `Website_Drive_bot`:
-
-```
-main.py            # De Telegram-bot (python-telegram-bot). Commands:
-                   #   /start /help /chatid /setlist /toevoegen /verwijderen
-                   #   /wachtrij /annuleer /publiceer
-                   #   + vrije tekst & foto's (privéchat) → wachtrij
-.python-version    # "3.12" — python-telegram-bot 20.8 is kapot op 3.13
-requirements.txt   # python-telegram-bot[job-queue]==20.8, requests, anthropic, pytz
-Procfile           # worker: python main.py  (start-commando voor Railway)
-pending_changes.json  # (door de bot beheerd) wachtrij met wijzigingsverzoeken
-```
-
-## 🔑 Key decisions
-
-- **Bronbestand = `drive-band.html`, gepubliceerd als `index.html`.** De site is
-  één groot HTML-bestand; de setlist staat in een JavaScript-array waarin elk
-  nummer een object is: `{ decade: '70s', title: "...", artist: '...' }`.
-- **Setlist-telling staat op twee plekken** in de HTML ("X nummers") en moet bij
-  elke wijziging meebewegen. De bot doet dit automatisch via regex.
-- **De ~1,1 MB van het bestand zit in 10 base64-foto's.** Zonder die blobs is de
-  HTML maar ~23 KB. De bot stript de foto's naar placeholders
-  (`base64,__IMG_n__`) voordat hij de HTML aan Claude geeft, en zet ze daarna
-  terug. Lokaal bewerken: gericht met Grep/targeted Read, niet in z'n geheel.
-- **AI-bewerking via SEARCH/REPLACE-paren** (model: `claude-opus-4-8`,
-  structured outputs met JSON-schema). De bot valideert dat elke zoekstring
-  exact één keer voorkomt, dat alle foto-placeholders intact zijn en dat
-  `</html>` nog bestaat — anders wordt er NIET gecommit en blijft de wachtrij
-  staan.
-- **Nieuwe foto's via Telegram** worden direct als los bestand gecommit naar
-  `images/` in de website-repo (onzichtbaar tot ernaar verwezen wordt); de
-  verwijzing (`<img src="images/...">`) gaat 's avonds mee met de batch.
-- **Wachtrij persistent** als `pending_changes.json` in de bot-repo (Contents
-  API) — overleeft Railway-herstarts.
-- **Bot commit via de GitHub Git Data API** (blob → tree → commit → ref), omdat
-  `index.html` groter is dan de 1 MB-limiet van de simpele Contents-API.
-- **Toegangscontrole via Telegram user-ID's** (`ALLOWED_USERS`). Iedereen kan
-  via `/start` zijn eigen ID zien.
-- **Python 3.12 gepind** via `.python-version` — python-telegram-bot 20.8
-  crasht op Python 3.13 (`AttributeError` in `Updater.__init__`).
-- **Hosting**: site op GitHub Pages (gratis), bot op Railway.app.
-- **Secrets** staan NIET in de repo's — als environment variables in Railway.
-
-## ⚙️ Railway environment variables
+### Railway-omgevingsvariabelen (service "worker")
 
 | Variabele | Status | Toelichting |
 |-----------|--------|-------------|
-| `TELEGRAM_TOKEN` | ✅ | Bottoken van @BotFather |
-| `GITHUB_TOKEN` | ✅ | GitHub PAT (classic, scope `repo`), juni 2026 opnieuw aangemaakt |
-| `ALLOWED_USERS` | ✅ | `8990259893` (Kobus) — andere bandleden nog toevoegen |
-| `ANTHROPIC_API_KEY` | ⬜ TODO | Nodig voor de AI-bewerking — bot crasht zonder |
-| `GROUP_CHAT_ID` | ⬜ TODO | Chat-id van de bandgroep (via /chatid in de groep). Zolang leeg: samenvatting naar alle ALLOWED_USERS |
-| `PUBLISH_HOUR` | optioneel | Standaard 22 (= 22:00 Europe/Amsterdam) |
-| `CLAUDE_MODEL` | optioneel | Standaard `claude-opus-4-8` |
+| `TELEGRAM_TOKEN` | ✅ ingesteld | Bot-token van BotFather |
+| `GITHUB_TOKEN` | ✅ ingesteld | Persoonlijk GitHub-token met repo-schrijfrechten |
+| `ALLOWED_USERS` | ✅ ingesteld | Kommagescheiden Telegram user-ID's |
+| `ANTHROPIC_API_KEY` | ✅ ingesteld | Anthropic API-sleutel |
+| `GROUP_CHAT_ID` | ❌ **ontbreekt** | Moet nog worden ingesteld: `-5349146756` |
+| `CLAUDE_MODEL` | optioneel | Standaard: `claude-opus-4-8` |
 
-## ✅ Status
+> **TODO**: Voeg `GROUP_CHAT_ID = -5349146756` toe via Railway → Variables → New Variable, dan Deploy.
 
-| Stap | Status |
-|------|--------|
-| Telegram-bot aangemaakt via @BotFather | ✅ |
-| GitHub PAT aangemaakt | ✅ |
-| Botcode geschreven + gepusht | ✅ |
-| Bot live op Railway (Python 3.12 fix) | ✅ |
-| Eigen Telegram-ID (8990259893) in ALLOWED_USERS | ✅ |
-| /setlist getest en werkend | ✅ |
-| AI-uitbreiding gepusht (vrije taal, foto's, avondbatch) | ✅ 2026-06-12 |
-| `ANTHROPIC_API_KEY` in Railway zetten | ⬜ TODO |
-| Bot in bandgroep + `GROUP_CHAT_ID` instellen | ⬜ TODO |
-| AI-flow testen (berichtje sturen → /publiceer) | ⬜ TODO |
-| Andere drie bandleden toevoegen aan `ALLOWED_USERS` | ⬜ TODO |
+### Oud/kapot project (negeren)
 
-## ▶️ Wat moet ik nu doen
+`dazzling-kindness` (project-ID: `ec6061e6-b84a-4def-88e2-22430956453b`) — dit project heeft verkeerde variabelen en kan worden verwijderd.
 
-1. **Anthropic API-key aanmaken**: console.anthropic.com → API Keys →
-   Create Key → in Railway als `ANTHROPIC_API_KEY` zetten.
-   (Zonder deze key crasht de bot bij het opstarten!)
-2. **Bot in de bandgroep zetten**: voeg de bot toe aan de Telegram-groep,
-   stuur daar `/chatid`, en zet het getoonde (negatieve) id in Railway als
-   `GROUP_CHAT_ID`.
-3. **Testen**: stuur de bot privé een berichtje als "Verander de kop X naar Y",
-   check `/wachtrij`, en voer direct door met `/publiceer`.
-4. **Bandleden toevoegen**: laat ze `/start` sturen, voeg hun ID's
-   komma-gescheiden toe aan `ALLOWED_USERS`.
+---
 
-## 🧰 Handige commando's
+## Bot-architectuur (`main.py`)
 
-```powershell
-# Site-wijziging handmatig pushen (vanuit de temp-clone):
-Copy-Item "C:\Users\k.vd.zwaal\OneDrive - Oosterhoff Group\Projecten\AI\Website Drive\drive-band.html" "$env:TEMP\Website_Drive_clone\index.html"
-Set-Location "$env:TEMP\Website_Drive_clone"
-git add index.html
-git commit -m "Omschrijving van de wijziging"
-git push
+```
+Telegram bericht (privé of groep)
+        │
+        ▼
+  Toegangscheck (ALLOWED_USERS)
+        │
+   ┌────┴────┐
+Commando   Vrije tekst / Foto
+   │              │
+Setlist-    Claude (claude-opus-4-8)
+functies    via tools + tool_choice
+   │              │
+GitHub      zoek/vervang op index.html
+Pages             │
+              commit_html() → GitHub API
 ```
 
-> ⚠️ Let op: de bot wijzigt `index.html` op GitHub. Als je daarna lokaal
-> handmatig pusht vanaf een oude `drive-band.html`, overschrijf je de
-> bot-wijzigingen. Haal eerst de laatste versie op:
-> `git -C "$env:TEMP\Website_Drive_clone" pull` en kopieer `index.html`
-> terug naar `drive-band.html`.
+### Commando's
 
-## 🚚 Overdracht naar een ander Claude-account / andere computer
+| Commando | Functie |
+|----------|---------|
+| `/start` | Welkomstbericht + uitleg |
+| `/help` | Alle commando's uitleggen |
+| `/chatid` | Toont chat-ID (handig voor groep-setup) |
+| `/setlist` | Toont huidige setlist |
+| `/toevoegen Artiest \| Titel \| Decennium` | Nummer toevoegen (direct live) |
+| `/verwijderen Titel` | Nummer verwijderen (direct live) |
 
-**Het project hangt NIET aan een Claude-account.** Alle accounts die ertoe
-doen zijn onafhankelijk van Claude:
+### Vrije tekst / foto
+- Elk bericht in privéchat of bandgroep → Claude bewerkt `index.html` direct
+- Foto met bijschrift → foto opgeslagen als `images/foto_YYYYMMDD_HHMMSS.jpg` in Website-repo, dan HTML bijgewerkt
+- Website is ~1 minuut na commit live
 
-| Onderdeel | Account | Overzetten nodig? |
-|-----------|---------|-------------------|
-| Code + website + dit document | GitHub (`KobusvanderZwaal`) | Nee — blijft gewoon staan |
-| Bot-hosting + alle secrets | Railway (login via GitHub) | Nee |
-| Telegram-bot | @BotFather (Telegram-account) | Nee |
-| Claude (chat/Code) | willekeurig — leest alles van GitHub | Gewoon nieuwe sessie starten |
-| Anthropic API-key (voor de bot) | console.anthropic.com — **los account**, mag privé zijn | Alleen key aanmaken + in Railway zetten |
+### Technische details
+- Claude-aanroep: `tools` + `tool_choice={"type":"tool","name":"html_edits"}` (stabiele structured output)
+- Grote base64-afbeeldingen worden gestript vóór Claude-aanroep en daarna teruggezet
+- `anthropic.Anthropic()` client wordt aangemaakt in `claude_edit()`, niet bij module-load
 
-### Verse start op een nieuwe computer / nieuw Claude-account
+---
 
-1. Start een Claude-sessie met:
-   _"Lees CONTEXT_website_drive.md op github.com/KobusvanderZwaal/Website_Drive en ga verder"_
-2. Claude kan de werkkopieën opnieuw opzetten (vereist: git geïnstalleerd):
-   ```powershell
-   git clone https://github.com/KobusvanderZwaal/Website_Drive.git "$env:TEMP\Website_Drive_clone"
-   git clone https://github.com/KobusvanderZwaal/Website_Drive_bot.git "$env:TEMP\Drive_bot"
-   ```
-   `drive-band.html` (de lokale bron) = `index.html` uit de website-repo.
-3. Voor pushen naar GitHub: zorg dat git is ingelogd op het GitHub-account
-   `KobusvanderZwaal` (of gebruik de PAT als wachtwoord).
+## Bekende bugs (opgelost)
 
-### Secrets — waar ze staan en hoe je ze terugkrijgt
+| Bug | Oorzaak | Oplossing |
+|-----|---------|-----------|
+| `KeyError: 'ANTHROPIC_API_KEY'` bij startup | `anthropic.Anthropic()` op module-niveau, key ontbrak | Client nu lazy (in `claude_edit()`) |
+| `AttributeError: filters.NEVER` | Bestaat niet in PTB 20.8 | Vervangen door `chat_filter = filters.ChatType.PRIVATE` + optioneel `\| filters.Chat(...)` |
+| `thinking={"type":"adaptive"}` + `output_config` | Niet stabiel in SDK | Vervangen door `tools` + `tool_choice` |
 
-Secrets staan bewust nergens in de repo's. Ze staan op één plek: **Railway →
-service → Variables**. Daar zijn ze ook gewoon uit te lezen.
-Kwijt? Alles is opnieuw aan te maken:
+---
 
-- **Telegram-token**: @BotFather → `/mybots` → API Token (of `/revoke` voor nieuwe)
-- **GitHub PAT**: github.com/settings/tokens → Generate new token (classic),
-  scope `repo`
-- **Anthropic API-key**: console.anthropic.com → API Keys → Create Key
+## Openstaande taken
 
-### Lokale werkmap verplaatsen (optioneel)
+- [ ] **GROUP_CHAT_ID instellen** in Railway (waarde: `-5349146756`) → bot reageert dan ook in de bandgroep
+- [ ] **AI-flow testen**: stuur een testbericht naar @website_drive_bot (privé), bijv. "Verander de intro-tekst naar: ..." — controleer of de site ~1 minuut later bijgewerkt is
+- [ ] **Andere bandleden toevoegen**: hun Telegram-ID's ophalen (stuur `/start` naar de bot) en toevoegen aan `ALLOWED_USERS` in Railway
 
-De huidige werkmap staat op de zakelijke OneDrive
-(`C:\Users\k.vd.zwaal\OneDrive - Oosterhoff Group\Projecten\AI\Website Drive\`).
-Wil je het project volledig privé: kopieer die map (of clone gewoon opnieuw
-van GitHub — daar staat alles al) naar een privélocatie en werk vanaf daar.
+---
+
+## Hoe verder in een nieuwe chat
+
+1. Lees dit bestand: `CONTEXT_website_drive.md` in repo `KobusvanderZwaal/Website_Drive`
+2. Lees de huidige bot-code: `main.py` in repo `KobusvanderZwaal/Website_Drive_bot`
+3. Ga naar Railway-project **Website-Drive-bot** om status te controleren
+4. Werk de openstaande taken hierboven af
